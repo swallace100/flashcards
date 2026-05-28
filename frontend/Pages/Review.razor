@@ -1,0 +1,210 @@
+@page "/review/{CollectionId:int}"
+@inject FlashcardApiService Api
+@inject NavigationManager Nav
+@implements IDisposable
+
+<div class="review-page">
+    @if (loading)
+    {
+        <p class="loading">Loading...</p>
+    }
+    else if (done)
+    {
+        <div class="done-state">
+            <div class="done-icon">&#10003;</div>
+            <h2>All caught up!</h2>
+            <p>No more cards due in this collection.</p>
+            <button class="btn-home" @onclick="GoHome">Back to Collection</button>
+        </div>
+    }
+    else if (card is not null)
+    {
+        <div class="review-header">
+            <button class="btn-back" @onclick="GoHome">&#8592;</button>
+            <span class="collection-label">Reviewing</span>
+        </div>
+
+        <div class="timer-container">
+            <svg viewBox="0 0 100 100" class="timer-svg">
+                <circle cx="50" cy="50" r="44" class="timer-bg" />
+                <circle cx="50" cy="50" r="44" class="timer-arc"
+                        style="stroke: @TimerColor; stroke-dashoffset: @TimerDashOffset;" />
+            </svg>
+            <span class="timer-text" style="color: @TimerColor">@secondsLeft</span>
+        </div>
+
+        <div class="flashcard">
+            <p class="card-front">@card.Front</p>
+            @if (showBack)
+            {
+                <hr class="card-divider" />
+                <p class="card-back">@card.Back</p>
+                @if (!string.IsNullOrWhiteSpace(card.Notes))
+                {
+                    <p class="card-notes">@card.Notes</p>
+                }
+            }
+        </div>
+
+        @if (!showBack)
+        {
+            <button class="btn-show-answer" @onclick="RevealAnswer">Show Answer</button>
+        }
+        else
+        {
+            <div class="rating-buttons">
+                <button class="btn-normal" @onclick="() => SubmitReview(2)">Normal</button>
+                <div class="rating-secondary">
+                    <button class="btn-again" @onclick="() => SubmitReview(0)">Again</button>
+                    <button class="btn-hard"  @onclick="() => SubmitReview(3)">Hard</button>
+                    <button class="btn-easy"  @onclick="() => SubmitReview(1)">Easy</button>
+                </div>
+            </div>
+        }
+
+        <button class="btn-edit" @onclick="OpenEdit">Edit</button>
+    }
+</div>
+
+@if (editing && card is not null)
+{
+    <div class="modal-backdrop" @onclick="CloseEdit">
+        <div class="modal-box" @onclick:stopPropagation>
+            <h2>Edit Card</h2>
+            <label class="field-label">Front</label>
+            <textarea class="input-field" @bind="editFront" rows="3"></textarea>
+            <label class="field-label">Back</label>
+            <textarea class="input-field" @bind="editBack" rows="3"></textarea>
+            <label class="field-label">Notes</label>
+            <textarea class="input-field" @bind="editNotes" rows="2"></textarea>
+            <div class="modal-actions">
+                <button class="btn-cancel" @onclick="CloseEdit">Cancel</button>
+                <button class="btn-primary" @onclick="SaveEdit">Save</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int CollectionId { get; set; }
+
+    private Flashcard? card;
+    private bool loading = true;
+    private bool done = false;
+    private bool showBack = false;
+    private bool editing = false;
+
+    private string editFront = "";
+    private string editBack = "";
+    private string editNotes = "";
+
+    private int secondsLeft = 45;
+    private CancellationTokenSource? _cts;
+
+    // r=44 → C = 2π×44 ≈ 276.46
+    private const double Circumference = 276.46;
+
+    private string TimerColor => secondsLeft > 20 ? "#4a8f5c" : secondsLeft > 10 ? "#b8854a" : "#b85454";
+    private string TimerDashOffset =>
+        (Circumference * (1.0 - secondsLeft / 45.0)).ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override async Task OnInitializedAsync() =>
+        await LoadNextCard();
+
+    private async Task LoadNextCard()
+    {
+        loading = true;
+        StopTimer();
+        showBack = false;
+        StateHasChanged();
+
+        card = await Api.GetNextCardAsync(CollectionId);
+        loading = false;
+
+        if (card is null)
+        {
+            done = true;
+            return;
+        }
+
+        StartTimer();
+    }
+
+    private void StartTimer()
+    {
+        secondsLeft = 45;
+        _cts = new CancellationTokenSource();
+        _ = RunTimerAsync(_cts.Token);
+    }
+
+    private void StopTimer()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
+    }
+
+    private async Task RunTimerAsync(CancellationToken ct)
+    {
+        try
+        {
+            using var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            while (await periodicTimer.WaitForNextTickAsync(ct))
+            {
+                secondsLeft--;
+                if (secondsLeft <= 0)
+                {
+                    await InvokeAsync(() => SubmitReview(0));
+                    return;
+                }
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private void RevealAnswer()
+    {
+        showBack = true;
+    }
+
+    private async Task SubmitReview(int difficultyId)
+    {
+        if (card is null) return;
+        StopTimer();
+        await Api.ReviewCardAsync(card.Id, difficultyId);
+        await LoadNextCard();
+    }
+
+    private void OpenEdit()
+    {
+        if (card is null) return;
+        StopTimer();
+        editFront = card.Front;
+        editBack = card.Back;
+        editNotes = card.Notes ?? "";
+        editing = true;
+    }
+
+    private void CloseEdit()
+    {
+        editing = false;
+        StartTimer();
+    }
+
+    private async Task SaveEdit()
+    {
+        if (card is null) return;
+        await Api.EditCardAsync(card.Id, editFront, editBack,
+            string.IsNullOrWhiteSpace(editNotes) ? null : editNotes);
+        card.Front = editFront;
+        card.Back = editBack;
+        card.Notes = editNotes;
+        editing = false;
+        StartTimer();
+    }
+
+    private void GoHome() => Nav.NavigateTo($"/collection/{CollectionId}");
+
+    public void Dispose() => StopTimer();
+}

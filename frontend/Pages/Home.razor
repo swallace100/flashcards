@@ -1,0 +1,93 @@
+@page "/"
+@inject FlashcardApiService Api
+@inject NavigationManager Nav
+
+<div class="home-page">
+    <header class="app-header">
+        <h1>Flashcards</h1>
+    </header>
+
+    @if (loading)
+    {
+        <p class="loading">Loading collections...</p>
+    }
+    else if (collections is null || collections.Count == 0)
+    {
+        <p class="empty-state">No collections yet. Tap + to create one.</p>
+    }
+    else
+    {
+        <div class="collection-list">
+            @foreach (var c in collections)
+            {
+                <button class="collection-card" @onclick="() => StartReview(c.Id)">
+                    <span class="collection-name">@c.Name</span>
+                    @if (!string.IsNullOrWhiteSpace(c.Description))
+                    {
+                        <span class="collection-desc">@c.Description</span>
+                    }
+                </button>
+            }
+        </div>
+    }
+
+    @if (showAddCollection)
+    {
+        <div class="modal-backdrop" @onclick="CloseModal">
+            <div class="modal-box" @onclick:stopPropagation>
+                <h2>New Collection</h2>
+                <input class="input-field" placeholder="Name" @bind="newName" />
+                <input class="input-field" placeholder="Description (optional)" @bind="newDesc" />
+                @if (!string.IsNullOrWhiteSpace(errorMsg))
+                {
+                    <p class="error-msg">@errorMsg</p>
+                }
+                <div class="modal-actions">
+                    <button class="btn-cancel" @onclick="CloseModal">Cancel</button>
+                    <button class="btn-primary" @onclick="AddCollection">Create</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <button class="fab" @onclick="() => showAddCollection = true" title="New collection">+</button>
+</div>
+
+@code {
+    private List<Collection>? collections;
+    private bool loading = true;
+    private bool showAddCollection = false;
+    private string newName = "";
+    private string newDesc = "";
+    private string errorMsg = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        collections = await Api.GetCollectionsAsync();
+        loading = false;
+    }
+
+    private void StartReview(int collectionId) =>
+        Nav.NavigateTo($"/collection/{collectionId}");
+
+    private async Task AddCollection()
+    {
+        errorMsg = "";
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            errorMsg = "Name is required.";
+            return;
+        }
+        await Api.CreateCollectionAsync(newName.Trim(), string.IsNullOrWhiteSpace(newDesc) ? null : newDesc.Trim());
+        newName = "";
+        newDesc = "";
+        showAddCollection = false;
+        collections = await Api.GetCollectionsAsync();
+    }
+
+    private void CloseModal()
+    {
+        showAddCollection = false;
+        errorMsg = "";
+    }
+}

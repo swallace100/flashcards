@@ -1,0 +1,152 @@
+@page "/collection/{CollectionId:int}"
+@inject FlashcardApiService Api
+@inject NavigationManager Nav
+
+<div class="collection-page">
+    <header class="app-header">
+        <button class="btn-back" @onclick='() => Nav.NavigateTo("/")'>&#8592;</button>
+        <div class="header-text">
+            <h1>@(collection?.Name ?? "Loading...")</h1>
+            @if (!string.IsNullOrWhiteSpace(collection?.Description))
+            {
+                <p class="header-desc">@collection.Description</p>
+            }
+        </div>
+    </header>
+
+    @if (loading)
+    {
+        <p class="loading">Loading...</p>
+    }
+    else
+    {
+        <div class="collection-actions">
+
+            @if (stats is not null)
+            {
+                <div class="stats-grid">
+                    <div class="stat-tile stat-due">
+                        <span class="stat-value">@stats.DueToday</span>
+                        <span class="stat-label">Due Today</span>
+                    </div>
+                    <div class="stat-tile">
+                        <span class="stat-value">@stats.TotalCards</span>
+                        <span class="stat-label">Total Cards</span>
+                    </div>
+                    <div class="stat-tile">
+                        <span class="stat-value">@stats.TotalReviews.ToString("N0")</span>
+                        <span class="stat-label">Total Reviews</span>
+                    </div>
+                    <div class="stat-tile">
+                        <span class="stat-value">@stats.NewCards</span>
+                        <span class="stat-label">New</span>
+                    </div>
+                    <div class="stat-tile">
+                        <span class="stat-value">@stats.Mastered</span>
+                        <span class="stat-label">Mastered</span>
+                    </div>
+                    <div class="stat-tile">
+                        <span class="stat-value">@(stats.LastReviewed.HasValue ? stats.LastReviewed.Value.ToLocalTime().ToString("MMM d") : "—")</span>
+                        <span class="stat-label">Last Review</span>
+                    </div>
+                </div>
+            }
+
+            <button class="btn-start-review" @onclick="StartReview">
+                <span class="action-icon">&#127137;</span>
+                <span class="action-label">Start Review</span>
+            </button>
+
+            <div class="import-section">
+                <p class="import-title">Add Cards from Excel</p>
+                <p class="import-hint">Spreadsheet must have <strong>front</strong> and <strong>back</strong> columns. <strong>notes</strong> is optional.</p>
+
+                <label class="upload-zone">
+                    <InputFile OnChange="HandleFileSelected" accept=".xlsx" />
+                    @if (selectedFile is null)
+                    {
+                        <span class="upload-icon">&#128196;</span>
+                        <span class="upload-label">Tap to choose an .xlsx file</span>
+                    }
+                    else
+                    {
+                        <span class="upload-icon">&#10003;</span>
+                        <span class="upload-label">@selectedFile.Name</span>
+                    }
+                </label>
+
+                @if (selectedFile is not null)
+                {
+                    <button class="btn-upload @(uploading ? "uploading" : "")"
+                            @onclick="UploadFile" disabled="@uploading">
+                        @(uploading ? "Uploading..." : "Upload")
+                    </button>
+                }
+
+                @if (importSuccess is not null)
+                {
+                    <p class="import-success">&#10003; @importSuccess</p>
+                }
+                @if (importError is not null)
+                {
+                    <p class="error-msg">@importError</p>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int CollectionId { get; set; }
+
+    private FlashcardsApp.Models.Collection? collection;
+    private CollectionStats? stats;
+    private bool loading = true;
+
+    private IBrowserFile? selectedFile;
+    private bool uploading = false;
+    private string? importSuccess;
+    private string? importError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var collectionTask = Api.GetCollectionAsync(CollectionId);
+        var statsTask      = Api.GetStatsAsync(CollectionId);
+        await Task.WhenAll(collectionTask, statsTask);
+        collection = collectionTask.Result;
+        stats      = statsTask.Result;
+        loading    = false;
+    }
+
+    private void StartReview() =>
+        Nav.NavigateTo($"/review/{CollectionId}");
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        importSuccess = null;
+        importError = null;
+    }
+
+    private async Task UploadFile()
+    {
+        if (selectedFile is null) return;
+        uploading = true;
+        importSuccess = null;
+        importError = null;
+
+        var (imported, error) = await Api.ImportCardsAsync(CollectionId, selectedFile);
+
+        uploading = false;
+        if (error is not null)
+        {
+            importError = error;
+        }
+        else
+        {
+            importSuccess = $"{imported} card{(imported == 1 ? "" : "s")} imported successfully.";
+            selectedFile = null;
+            stats = await Api.GetStatsAsync(CollectionId); // refresh stats after import
+        }
+    }
+}

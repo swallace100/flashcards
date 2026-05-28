@@ -1,0 +1,29 @@
+# Database
+database/dump-*.sql
+database/migrate.ps1
+
+# Build output
+**/bin/
+**/obj/
+
+# Secrets
+**/.env
+!**/.env.example
+
+# User secrets & config overrides
+**/appsettings.Development.json
+**/appsettings.*.json
+!**/appsettings.json
+
+# Blazor WASM publish
+**/wwwroot/_framework/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# OS
+Thumbs.db
+.DS_Store
