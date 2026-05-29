@@ -108,8 +108,13 @@
     private string? importSuccess;
     private string? importError;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+
+    protected override async Task OnParametersSetAsync() => await LoadDataAsync();
+
+    private async Task LoadDataAsync()
     {
+        loading = true;
         var collectionTask = Api.GetCollectionAsync(CollectionId);
         var statsTask      = Api.GetStatsAsync(CollectionId);
         await Task.WhenAll(collectionTask, statsTask);

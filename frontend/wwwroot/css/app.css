@@ -356,9 +356,9 @@ html, body {
 }
 
 .card-front {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     font-weight: 600;
-    line-height: 1.45;
+    line-height: 1.4;
     color: #1a1a2e;
 }
 
@@ -368,13 +368,13 @@ html, body {
 }
 
 .card-back {
-    font-size: 1.05rem;
-    line-height: 1.55;
+    font-size: 1.3rem;
+    line-height: 1.5;
     color: #333;
 }
 
 .card-notes {
-    font-size: 0.875rem;
+    font-size: 1rem;
     color: #aaa;
     font-style: italic;
     line-height: 1.4;

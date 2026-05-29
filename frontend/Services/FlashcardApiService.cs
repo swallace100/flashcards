@@ -19,7 +19,7 @@ public class FlashcardApiService(HttpClient http)
         http.GetFromJsonAsync<Flashcard?>($"flashcards/next?collectionId={collectionId}");
 
     public Task<HttpResponseMessage> ReviewCardAsync(int cardId, int difficultyId) =>
-        http.PutAsJsonAsync($"flashcards/{cardId}", new { difficulty_id = difficultyId });
+        http.PutAsJsonAsync($"flashcards/{cardId}", new { difficultyId });
 
     public Task<HttpResponseMessage> EditCardAsync(int cardId, string front, string back, string? notes) =>
         http.PutAsJsonAsync($"flashcards/{cardId}/edit", new { front, back, notes });

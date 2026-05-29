@@ -29,7 +29,7 @@ public static class CollectionEndpoints
             return Results.Ok(new
             {
                 totalCards   = cards.Count,
-                dueToday     = cards.Count(c => c.DueDate <= now),
+                dueToday     = cards.Count(c => c.DueDate <= now && c.Repetitions > 0),
                 totalReviews = cards.Sum(c => c.Repetitions),
                 newCards     = cards.Count(c => c.Repetitions == 0),
                 mastered     = cards.Count(c => c.Interval >= 21),

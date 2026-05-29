@@ -9,13 +9,23 @@ public static class FlashcardEndpoints
 {
     public static void Map(WebApplication app)
     {
-        // Next card due for review in a collection
+        // Next card for review: due cards first (ordered by due date), then new cards (ordered by id)
         app.MapGet("/flashcards/next", async (int collectionId, FlashcardsDbContext db) =>
         {
+            var now = DateTime.UtcNow;
+
             var card = await db.Flashcards
-                .Where(f => f.CollectionId == collectionId && f.DueDate <= DateTime.UtcNow)
-                .OrderBy(f => f.DueDate)
-                .FirstOrDefaultAsync();
+                           .Where(f => f.CollectionId == collectionId
+                                    && f.DueDate <= now
+                                    && f.Repetitions > 0)
+                           .OrderBy(f => f.DueDate)
+                           .FirstOrDefaultAsync()
+                       ?? await db.Flashcards
+                           .Where(f => f.CollectionId == collectionId
+                                    && f.Repetitions == 0
+                                    && f.DueDate <= now)
+                           .OrderBy(f => f.Id)
+                           .FirstOrDefaultAsync();
 
             return card is null ? Results.NoContent() : Results.Ok(card);
         });
@@ -30,7 +40,7 @@ public static class FlashcardEndpoints
             return Results.Created($"/flashcards/{flashcard.Id}", flashcard);
         });
 
-        // Review a card — body: { "difficulty_id": 0|1|2|3 }
+        // Review a card — body: { "difficultyId": 0|1|2|3 }
         app.MapPut("/flashcards/{id}", async (int id, ReviewRequest req, FlashcardsDbContext db) =>
         {
             var card = await db.Flashcards.FindAsync(id);

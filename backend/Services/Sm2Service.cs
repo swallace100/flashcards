@@ -8,10 +8,10 @@ public static class Sm2Service
     {
         int sm2Quality = quality switch
         {
-            0 => 1, // Again  → fail
+            0 => 1, // Again  → fail (resets)
             1 => 5, // Easy   → perfect
             2 => 4, // Normal → correct
-            3 => 2, // Hard   → correct with difficulty
+            3 => 3, // Hard   → correct but difficult (advances, does not reset)
             _ => 3
         };
 
@@ -21,15 +21,15 @@ public static class Sm2Service
         int newRepetitions;
         int newInterval;
 
+        newRepetitions = currentRepetitions + 1;
+
         if (sm2Quality < 3)
         {
-            // Failed — reset
-            newRepetitions = 0;
+            // Failed — reset interval but keep repetition count so card stays in due queue
             newInterval = 1;
         }
         else
         {
-            newRepetitions = currentRepetitions + 1;
             newInterval = currentRepetitions switch
             {
                 0 => 1,

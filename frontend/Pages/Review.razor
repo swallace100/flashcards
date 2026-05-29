@@ -13,7 +13,7 @@
         <div class="done-state">
             <div class="done-icon">&#10003;</div>
             <h2>All caught up!</h2>
-            <p>No more cards due in this collection.</p>
+            <p>No due or new cards remaining in this collection.</p>
             <button class="btn-home" @onclick="GoHome">Back to Collection</button>
         </div>
     }
@@ -53,11 +53,11 @@
         else
         {
             <div class="rating-buttons">
-                <button class="btn-normal" @onclick="() => SubmitReview(2)">Normal</button>
+                <button class="btn-normal" @onclick="() => SubmitReview(2)">Good</button>
                 <div class="rating-secondary">
                     <button class="btn-again" @onclick="() => SubmitReview(0)">Again</button>
-                    <button class="btn-hard"  @onclick="() => SubmitReview(3)">Hard</button>
-                    <button class="btn-easy"  @onclick="() => SubmitReview(1)">Easy</button>
+                    <button class="btn-hard" @onclick="() => SubmitReview(3)">Hard</button>
+                    <button class="btn-easy" @onclick="() => SubmitReview(1)">Easy</button>
                 </div>
             </div>
         }
