@@ -3,20 +3,21 @@ using FlashcardsApi.Data;
 using FlashcardsApi.Endpoints;
 using Microsoft.EntityFrameworkCore;
 
-// Treat all DateTime values as unspecified kind so Npgsql doesn't reject
-// DateTime.UtcNow comparisons against TIMESTAMP WITHOUT TIME ZONE columns
-AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
 Env.Load(); // loads .env into environment variables; silently skipped if file doesn't exist
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<FlashcardsDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+        policy.WithOrigins(
+                "http://localhost:5029",
+                "https://localhost:7001",
+                "https://happy-sea-0b22b5300.7.azurestaticapps.net")
+            .AllowAnyHeader()
+            .AllowAnyMethod()));
 
 var app = builder.Build();
 
