@@ -1,24 +1,24 @@
 -- Flashcards personal app schema
--- PostgreSQL
+-- Azure SQL / SQL Server
 
 CREATE TABLE collections (
-    id          SERIAL PRIMARY KEY,
-    name        VARCHAR(100) NOT NULL,
-    description VARCHAR(255),
-    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id           INT IDENTITY(1,1) PRIMARY KEY,
+    name         NVARCHAR(100) NOT NULL,
+    description  NVARCHAR(255),
+    created_date DATETIME2 DEFAULT GETUTCDATE()
 );
 
 CREATE TABLE flashcards (
-    id            SERIAL PRIMARY KEY,
-    collection_id INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
-    front         VARCHAR(2000) NOT NULL,
-    back          VARCHAR(2000) NOT NULL,
-    notes         VARCHAR(2000),
-    created_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id            INT IDENTITY(1,1) PRIMARY KEY,
+    collection_id INT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+    front         NVARCHAR(2000) NOT NULL,
+    back          NVARCHAR(2000) NOT NULL,
+    notes         NVARCHAR(2000),
+    created_date  DATETIME2 DEFAULT GETUTCDATE(),
     -- SM-2 spaced repetition fields
-    due_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    interval      INTEGER   DEFAULT 1,
+    due_date      DATETIME2 DEFAULT GETUTCDATE(),
+    interval      INT       DEFAULT 1,
     ef            REAL      DEFAULT 2.5,
-    repetitions   INTEGER   DEFAULT 0,
-    last_reviewed TIMESTAMP
+    repetitions   INT       DEFAULT 0,
+    last_reviewed DATETIME2
 );

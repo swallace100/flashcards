@@ -5,6 +5,8 @@ database/migrate.ps1
 # Build output
 **/bin/
 **/obj/
+**/publish/
+*.zip
 
 # Secrets
 **/.env
