@@ -1,34 +1,33 @@
 # Flashcards
 
-A personal spaced repetition flashcard app. Supports multiple collections and importing cards from Excel spreadsheets. Built with Blazor WebAssembly (frontend) and ASP.NET Core (backend), backed by PostgreSQL.
+A personal spaced repetition flashcard app. Supports multiple collections and importing cards from Excel spreadsheets. Built with Blazor WebAssembly (frontend) and ASP.NET Core (backend), backed by SQL Server (Azure SQL in production).
 
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- PostgreSQL 17
+- SQL Server LocalDB (included with Visual Studio, or via the [SQL Server Express LocalDB installer](https://learn.microsoft.com/sql/database-engine/configure-windows/sql-server-express-localdb))
 
 ## First-time setup
 
 **1. Create the database**
 
-In DBeaver or psql, create a database named `flashcards`, then run the schema:
-
 ```powershell
-psql -h localhost -U postgres -d flashcards -f database/schema.sql
+sqlcmd -S "(localdb)\mssqllocaldb" -Q "CREATE DATABASE flashcards"
+sqlcmd -S "(localdb)\mssqllocaldb" -d flashcards -i database/schema.sql
 ```
 
-**2. Configure the API secret**
+**2. Configure the connection string**
 
-Copy the example env file and fill in your password:
+Copy the example env file:
 
 ```powershell
 Copy-Item Backend/.env.example Backend/.env
 ```
 
-Edit `Backend/.env`:
+`Backend/.env` should contain:
 
 ```
-ConnectionStrings__DefaultConnection=Host=localhost;Database=flashcards;Username=postgres;Password=YOUR_PASSWORD
+ConnectionStrings__DefaultConnection=Server=(localdb)\mssqllocaldb;Database=flashcards;Trusted_Connection=true
 ```
 
 ## Running the app
@@ -74,4 +73,24 @@ A 45-second timer runs per card. If it expires before you rate the card, it auto
 
 ## Deploying to Azure
 
-When deploying to Azure App Service, set `ConnectionStrings__DefaultConnection` as an Application Setting — no `.env` file needed. The Blazor frontend can be hosted on Azure Static Web Apps; update `FlashcardsApp/wwwroot/appsettings.json` with the production API URL before publishing.
+The live app runs entirely on Azure:
+
+- **Frontend** — Blazor WASM hosted on Azure Static Web Apps, deployed automatically via GitHub Actions on push to `main`. The production API URL lives in `frontend/wwwroot/appsettings.json` (and `appsettings.Development.json` overrides it to `http://localhost:5288` for local dev).
+- **Backend** — ASP.NET Core hosted on Azure App Service (Linux, F1 free tier).
+- **Database** — Azure SQL (Serverless tier) with **Entra ID-only authentication** — no SQL passwords anywhere.
+
+Authentication between the backend and the database uses the App Service's **system-assigned Managed Identity**, granted access via:
+
+```sql
+CREATE USER [flashcards-backend] FROM EXTERNAL PROVIDER;
+ALTER ROLE db_datareader ADD MEMBER [flashcards-backend];
+ALTER ROLE db_datawriter ADD MEMBER [flashcards-backend];
+```
+
+The `ConnectionStrings__DefaultConnection` Application Setting on the App Service uses:
+
+```
+Server=tcp:flashcards-server.database.windows.net,1433;Initial Catalog=flashcards-db;Authentication=Active Directory Managed Identity;Encrypt=True
+```
+
+No `.env` file is needed in production — App Service Application Settings take its place.
