@@ -24,11 +24,14 @@ html, body {
 }
 
 .home-page .app-header {
-    padding: 20px 20px 18px;
+    padding: 32px 20px 28px;
+    background: linear-gradient(160deg, #1a1a2e 0%, #2a2a4a 100%);
 }
 
 .home-page .app-header h1 {
-    font-size: 1.5rem;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
 }
 
 .collection-list {
@@ -527,17 +530,18 @@ html, body {
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
     z-index: 200;
+    padding: 16px;
 }
 
 .modal-box {
     background: white;
-    border-radius: 22px 22px 0 0;
-    padding: 28px 20px 36px;
+    border-radius: 22px;
+    padding: 28px 20px 24px;
     width: 100%;
-    max-width: 480px;
+    max-width: 440px;
     display: flex;
     flex-direction: column;
     gap: 12px;
