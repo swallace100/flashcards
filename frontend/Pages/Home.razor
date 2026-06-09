@@ -20,14 +20,33 @@
         <div class="collection-list">
             @foreach (var c in collections)
             {
-                <button class="collection-card" @onclick="() => StartReview(c.Id)">
-                    <span class="collection-name">@c.Name</span>
-                    @if (!string.IsNullOrWhiteSpace(c.Description))
-                    {
-                        <span class="collection-desc">@c.Description</span>
-                    }
-                </button>
+                <div class="collection-card" @onclick="() => StartReview(c.Id)">
+                    <div class="collection-card-body">
+                        <span class="collection-name">@c.Name</span>
+                        @if (!string.IsNullOrWhiteSpace(c.Description))
+                        {
+                            <span class="collection-desc">@c.Description</span>
+                        }
+                    </div>
+                    <button class="btn-delete-collection" @onclick="() => ConfirmDelete(c)" @onclick:stopPropagation title="Delete collection">
+                        &#128465;
+                    </button>
+                </div>
             }
+        </div>
+    }
+
+    @if (deletingCollection is not null)
+    {
+        <div class="modal-backdrop" @onclick="CancelDelete">
+            <div class="modal-box" @onclick:stopPropagation>
+                <h2>Delete Collection?</h2>
+                <p class="delete-warning">This will permanently delete <strong>@deletingCollection.Name</strong> and all its flashcards. This cannot be undone.</p>
+                <div class="modal-actions">
+                    <button class="btn-cancel" @onclick="CancelDelete">Cancel</button>
+                    <button class="btn-danger" @onclick="DeleteCollection">Delete</button>
+                </div>
+            </div>
         </div>
     }
 
@@ -60,6 +79,7 @@
     private string newName = "";
     private string newDesc = "";
     private string errorMsg = "";
+    private Collection? deletingCollection;
 
     protected override async Task OnInitializedAsync()
     {
@@ -89,5 +109,16 @@
     {
         showAddCollection = false;
         errorMsg = "";
+    }
+
+    private void ConfirmDelete(Collection collection) => deletingCollection = collection;
+    private void CancelDelete() => deletingCollection = null;
+
+    private async Task DeleteCollection()
+    {
+        if (deletingCollection is null) return;
+        await Api.DeleteCollectionAsync(deletingCollection.Id);
+        deletingCollection = null;
+        collections = await Api.GetCollectionsAsync();
     }
 }

@@ -1,7 +1,7 @@
--- Migration: saimo_db → flashcards
+-- Migration: your_old_db → flashcards
 --
 -- Prerequisites:
---   1. The old saimo_db database still exists and is accessible
+--   1. The old your_old_db database still exists and is accessible
 --   2. The new flashcards database already has schema.sql applied
 --
 -- Run against the NEW database:
@@ -17,7 +17,7 @@ CREATE EXTENSION IF NOT EXISTS dblink;
 INSERT INTO collections (id, name, description, created_date)
 SELECT id, name, description, created_date
 FROM dblink(
-    'dbname=saimo_db host=localhost user=YOUR_USERNAME password=YOUR_PASSSWORD',
+    'dbname=your_old_db host=localhost user=YOUR_USERNAME password=YOUR_PASSSWORD',
     'SELECT id, name, description, created_date FROM collections'
 ) AS t(
     id           integer,
@@ -45,7 +45,7 @@ SELECT
     COALESCE(ufs_repetitions,   f_repetitions, 0)      AS repetitions,
     COALESCE(ufs_last_reviewed, f_last_reviewed)       AS last_reviewed
 FROM dblink(
-    'dbname=saimo_db host=localhost user=postgres password=YOUR_PASSWORD',
+    'dbname=your_old_db host=localhost user=postgres password=YOUR_PASSWORD',
     'SELECT f.id, f.collection_id, f.front, f.back, f.notes, f.created_date,
             f.due_date, f.interval, f.ef, f.repetitions, f.last_reviewed,
             ufs.due_date, ufs.interval, ufs.ef, ufs.repetitions, ufs.last_reviewed

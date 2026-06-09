@@ -3,6 +3,7 @@ namespace FlashcardsApi.Services;
 public static class Sm2Service
 {
     // quality: 0=Again, 1=Easy, 2=Normal, 3=Hard
+    // ef: easiness factor
     public static (int interval, float ef, int repetitions, DateTime dueDate) Calculate(
         int quality, int currentInterval, float currentEf, int currentRepetitions)
     {
@@ -15,7 +16,10 @@ public static class Sm2Service
             _ => 3
         };
 
+        // Calculate the new easiness factor using the caculations from Piotr Wozniak's original SM-2 paper
         float newEf = currentEf + (0.1f - (5 - sm2Quality) * (0.08f + (5 - sm2Quality) * 0.02f));
+
+        // Floor EF so that intervals continue to grow at a reasonable pace
         newEf = Math.Max(1.3f, newEf);
 
         int newRepetitions;
@@ -32,8 +36,12 @@ public static class Sm2Service
         {
             newInterval = currentRepetitions switch
             {
+                // First time seeing the card (repetitions = 0)
                 0 => 1,
+                // Second time seeing the card (review in 6 days)
                 1 => 6,
+                // 2+ times seeing the card (multiple current interval by the easiness factor so that
+                // intervals grow exponentially the more you know a card.)
                 _ => (int)Math.Round(currentInterval * currentEf)
             };
         }

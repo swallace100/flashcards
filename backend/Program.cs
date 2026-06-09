@@ -10,14 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<FlashcardsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+var frontendOrigin = builder.Configuration["AllowedOrigin"] ?? "";
+
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins(
-                "http://localhost:5029",
-                "https://localhost:7001",
-                "https://happy-sea-0b22b5300.7.azurestaticapps.net")
-            .AllowAnyHeader()
-            .AllowAnyMethod()));
+    {
+        // Allow localhost in CORS policy for development and testing
+        var origins = new List<string> { "http://localhost:5029" };
+        if (!string.IsNullOrEmpty(frontendOrigin)) origins.Add(frontendOrigin);
+        policy.WithOrigins([.. origins]).AllowAnyHeader().AllowAnyMethod();
+    }));
 
 var app = builder.Build();
 

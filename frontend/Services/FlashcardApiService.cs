@@ -27,6 +27,9 @@ public class FlashcardApiService(HttpClient http)
     public Task<HttpResponseMessage> CreateCollectionAsync(string name, string? description) =>
         http.PostAsJsonAsync("collections", new { name, description });
 
+    public Task<HttpResponseMessage> DeleteCollectionAsync(int id) =>
+        http.DeleteAsync($"collections/{id}");
+
     public async Task<(int imported, string? error)> ImportCardsAsync(int collectionId, IBrowserFile file)
     {
         using var content = new MultipartFormDataContent();

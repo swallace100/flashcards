@@ -9,34 +9,44 @@ public static class CollectionEndpoints
 {
     public static void Map(WebApplication app)
     {
+        // Get all collections, sorted alphabetically
         app.MapGet("/collections", async (FlashcardsDbContext db) =>
-            await db.Collections.OrderBy(c => c.Name).ToListAsync());
+            await db.Collections.OrderBy(collection => collection.Name).ToListAsync());
 
+        // Get a single collection by ID
         app.MapGet("/collections/{id}", async (int id, FlashcardsDbContext db) =>
-            await db.Collections.FindAsync(id) is Collection c ? Results.Ok(c) : Results.NotFound());
+            await db.Collections.FindAsync(id) is Collection collection ? Results.Ok(collection) : Results.NotFound());
 
+        // Get review stats for a collection (due today, total cards, new cards, mastered, etc.)
         app.MapGet("/collections/{id}/stats", async (int id, FlashcardsDbContext db) =>
         {
-            if (!await db.Collections.AnyAsync(c => c.Id == id))
+            if (!await db.Collections.AnyAsync(collection => collection.Id == id))
                 return Results.NotFound();
 
             var cards = await db.Flashcards
-                .Where(f => f.CollectionId == id)
-                .Select(f => new { f.Repetitions, f.DueDate, f.Interval, f.LastReviewed })
+                .Where(flashcard => flashcard.CollectionId == id)
+                .Select(flashcard => new
+                {
+                    flashcard.Repetitions,
+                    flashcard.DueDate,
+                    flashcard.Interval,
+                    flashcard.LastReviewed
+                })
                 .ToListAsync();
 
             var now = DateTime.UtcNow;
             return Results.Ok(new
             {
-                totalCards   = cards.Count,
-                dueToday     = cards.Count(c => c.DueDate <= now && c.Repetitions > 0),
-                totalReviews = cards.Sum(c => c.Repetitions),
-                newCards     = cards.Count(c => c.Repetitions == 0),
-                mastered     = cards.Count(c => c.Interval >= 21),
-                lastReviewed = cards.Max(c => c.LastReviewed)
+                totalCards = cards.Count,
+                dueToday = cards.Count(card => card.DueDate <= now && card.Repetitions > 0),
+                totalReviews = cards.Sum(card => card.Repetitions),
+                newCards = cards.Count(card => card.Repetitions == 0),
+                mastered = cards.Count(card => card.Interval > 30),
+                lastReviewed = cards.Max(card => card.LastReviewed)
             });
         });
 
+        // Create a new collection
         app.MapPost("/collections", async (Collection collection, FlashcardsDbContext db) =>
         {
             db.Collections.Add(collection);
@@ -44,6 +54,7 @@ public static class CollectionEndpoints
             return Results.Created($"/collections/{collection.Id}", collection);
         });
 
+        // Delete a collection and all its flashcards (cascade)
         app.MapDelete("/collections/{id}", async (int id, FlashcardsDbContext db) =>
         {
             var collection = await db.Collections.FindAsync(id);
@@ -53,11 +64,10 @@ public static class CollectionEndpoints
             return Results.NoContent();
         });
 
-        // POST /collections/{id}/import  — multipart form with an .xlsx file
-        // Expected columns (case-insensitive): front, back, notes
+        // Import flashcards from an .xlsx file (multipart form); expected columns: front, back, notes (optional)
         app.MapPost("/collections/{id}/import", async (int id, HttpRequest request, FlashcardsDbContext db) =>
         {
-            if (!await db.Collections.AnyAsync(c => c.Id == id))
+            if (!await db.Collections.AnyAsync(collection => collection.Id == id))
                 return Results.NotFound();
 
             if (!request.HasFormContentType || request.Form.Files.Count == 0)
@@ -77,7 +87,7 @@ public static class CollectionEndpoints
                 switch (header)
                 {
                     case "front": frontCol = cell.Address.ColumnNumber; break;
-                    case "back":  backCol  = cell.Address.ColumnNumber; break;
+                    case "back": backCol = cell.Address.ColumnNumber; break;
                     case "notes": notesCol = cell.Address.ColumnNumber; break;
                 }
             }
@@ -89,7 +99,7 @@ public static class CollectionEndpoints
             foreach (var row in sheet.RowsUsed().Skip(1))
             {
                 var front = row.Cell(frontCol.Value).GetString().Trim();
-                var back  = row.Cell(backCol.Value).GetString().Trim();
+                var back = row.Cell(backCol.Value).GetString().Trim();
                 if (string.IsNullOrEmpty(front) || string.IsNullOrEmpty(back)) continue;
 
                 cards.Add(new Flashcard

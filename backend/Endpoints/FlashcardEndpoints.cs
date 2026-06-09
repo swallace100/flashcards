@@ -15,24 +15,26 @@ public static class FlashcardEndpoints
             var now = DateTime.UtcNow;
 
             var card = await db.Flashcards
-                           .Where(f => f.CollectionId == collectionId
-                                    && f.DueDate <= now
-                                    && f.Repetitions > 0)
-                           .OrderBy(f => f.DueDate)
+                           .Where(flashcard => flashcard.CollectionId == collectionId
+                                    && flashcard.DueDate <= now
+                                    && flashcard.Repetitions > 0)
+                           .OrderBy(flashcard => flashcard.DueDate)
                            .FirstOrDefaultAsync()
                        ?? await db.Flashcards
-                           .Where(f => f.CollectionId == collectionId
-                                    && f.Repetitions == 0
-                                    && f.DueDate <= now)
-                           .OrderBy(f => f.Id)
+                           .Where(flashcard => flashcard.CollectionId == collectionId
+                                    && flashcard.Repetitions == 0
+                                    && flashcard.DueDate <= now)
+                           .OrderBy(flashcard => flashcard.Id)
                            .FirstOrDefaultAsync();
 
             return card is null ? Results.NoContent() : Results.Ok(card);
         });
 
+        // Get a single flashcard by ID
         app.MapGet("/flashcards/{id}", async (int id, FlashcardsDbContext db) =>
             await db.Flashcards.FindAsync(id) is Flashcard card ? Results.Ok(card) : Results.NotFound());
 
+        // Create a new flashcard
         app.MapPost("/flashcards", async (Flashcard flashcard, FlashcardsDbContext db) =>
         {
             db.Flashcards.Add(flashcard);
@@ -40,7 +42,7 @@ public static class FlashcardEndpoints
             return Results.Created($"/flashcards/{flashcard.Id}", flashcard);
         });
 
-        // Review a card — body: { "difficultyId": 0|1|2|3 }
+        // Submit a review rating for a card; recalculates interval, EF, and next due date via SM-2
         app.MapPut("/flashcards/{id}", async (int id, ReviewRequest req, FlashcardsDbContext db) =>
         {
             var card = await db.Flashcards.FindAsync(id);
@@ -73,6 +75,7 @@ public static class FlashcardEndpoints
             return Results.Ok(card);
         });
 
+        // Delete a flashcard
         app.MapDelete("/flashcards/{id}", async (int id, FlashcardsDbContext db) =>
         {
             var card = await db.Flashcards.FindAsync(id);
