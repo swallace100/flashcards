@@ -138,6 +138,7 @@ html, body {
     display: flex;
     align-items: flex-start;
     gap: 12px;
+    user-select: none;
 }
 
 .app-header .btn-back {
@@ -264,7 +265,7 @@ html, body {
 
 .upload-zone input[type="file"] { display: none; }
 
-.upload-zone:hover, .upload-zone.dragging {
+.upload-zone:hover {
     border-color: #1a1a2e;
     background: #f8f9fb;
 }
@@ -485,6 +486,24 @@ html, body {
 }
 
 .btn-edit:active { border-color: #999; }
+
+/* ── Button hover states ────────────────────────────── */
+.btn-start-review:hover,
+.btn-show-answer:hover,
+.btn-again:hover,
+.btn-hard:hover,
+.btn-normal:hover,
+.btn-easy:hover,
+.btn-home:hover,
+.btn-primary:hover,
+.btn-danger:hover,
+.btn-upload:not(:disabled):hover,
+.fab:hover { filter: brightness(1.1); }
+
+.btn-cancel:hover,
+.btn-edit:hover { background: #f5f5f5; }
+
+.btn-delete-collection:hover { color: #b85454; }
 
 /* ── Done state ─────────────────────────────────────── */
 .done-state {
