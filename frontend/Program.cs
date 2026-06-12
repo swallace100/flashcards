@@ -14,7 +14,7 @@ var clientId   = builder.Configuration["AzureAd:ClientId"] ?? "";
 builder.Services.AddMsalAuthentication(options =>
 {
     builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
-    options.ProviderOptions.DefaultAccessTokenScopes.Add($"api://{clientId}/.default");
+    options.ProviderOptions.DefaultAccessTokenScopes.Add($"api://{clientId}/access_as_user");
 });
 
 builder.Services.AddHttpClient<FlashcardApiService>(client =>
