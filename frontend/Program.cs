@@ -16,8 +16,6 @@ var apiScope = $"api://{clientId}/access_as_user";
 builder.Services.AddMsalAuthentication(options =>
 {
     builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
-    // Consent to the API scope during login but don't block login on acquiring the token
-    options.ProviderOptions.AdditionalScopesToConsent.Add(apiScope);
 });
 
 builder.Services.AddHttpClient<FlashcardApiService>(client =>
