@@ -62,6 +62,27 @@ curl -X POST http://localhost:5288/collections/{id}/import -F "file=@path/to/you
 
 Replace `{id}` with the collection's numeric ID.
 
+## Authentication
+
+The app uses **Microsoft Entra ID (Azure AD)** for user authentication. Only authenticated users can access the app or call the API.
+
+**Frontend (Blazor WASM):** Uses `Microsoft.Authentication.WebAssembly.Msal` to run the OAuth 2.0 PKCE flow in the browser. Protected pages (`Home`, `CollectionPage`, `Review`) declare `@attribute [Authorize]`, which causes `AuthorizeRouteView` to redirect unauthenticated users to the Microsoft login page. The `/authentication/{action}` route (handled by `Authentication.razor`) is left without `[Authorize]` so it always renders and can process the login callback. After a successful login, MSAL caches the token in session storage and attaches it as a Bearer token to all API requests via `AuthorizationMessageHandler`.
+
+**Backend (ASP.NET Core):** Uses `Microsoft.Identity.Web` to validate incoming JWT Bearer tokens. A fallback authorization policy requires all endpoints to have an authenticated user, so no route is accidentally left open.
+
+**Configuration:** The frontend reads its Entra ID settings from `appsettings.json`. In production these values are injected at build time by GitHub Actions from repository secrets (see GitHub Actions secrets table below). The relevant secrets are:
+
+| Secret | Description |
+|--------|-------------|
+| `AZURE_AD_TENANT_ID` | Your Entra ID tenant ID. |
+| `AZURE_AD_CLIENT_ID` | The client ID of the app registration. |
+
+The backend reads its Entra ID settings from App Service Application Settings (`AzureAd:TenantId`, `AzureAd:ClientId`, `AzureAd:Audience`).
+
+**App registration (Azure Portal):** The app registration needs:
+- A redirect URI pointing to `https://<your-swa-url>/authentication/login-callback`
+- "Expose an API" with an `access_as_user` delegated scope defined (App ID URI: `api://<client-id>`)
+
 ## Spaced repetition
 
 Cards use the SM-2 algorithm. After revealing the answer, rate the card:
