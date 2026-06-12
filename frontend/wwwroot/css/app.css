@@ -26,12 +26,31 @@ html, body {
 .home-page .app-header {
     padding: 32px 20px 28px;
     background: linear-gradient(160deg, #1a1a2e 0%, #2a2a4a 100%);
+    justify-content: space-between;
+    align-items: center;
 }
 
 .home-page .app-header h1 {
     font-size: 2rem;
     font-weight: 800;
     letter-spacing: -0.03em;
+}
+
+.btn-logout {
+    background: none;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.7);
+    font-size: 1.1rem;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.btn-logout:hover {
+    border-color: rgba(255,255,255,0.6);
+    color: white;
 }
 
 .collection-list {

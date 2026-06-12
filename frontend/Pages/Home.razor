@@ -1,10 +1,12 @@
 @page "/"
 @inject FlashcardApiService Api
 @inject NavigationManager Nav
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 
 <div class="home-page">
     <header class="app-header">
         <h1>Flashcards</h1>
+        <button class="btn-logout" @onclick="Logout" title="Sign out">&#x2192;</button>
     </header>
 
     @if (loading)
@@ -89,6 +91,9 @@
 
     private void StartReview(int collectionId) =>
         Nav.NavigateTo($"/collection/{collectionId}");
+
+    private void Logout() =>
+        Nav.NavigateToLogout("authentication/logout");
 
     private async Task AddCollection()
     {

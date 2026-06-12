@@ -32,8 +32,11 @@ jobs:
             const coredemo = require('@actions/core')
             return await coredemo.getIDToken()
           result-encoding: string
-      - name: Inject backend URL #Get backend URL from GitHub Secrets
-        run: sed -i 's|https://your-backend.azurewebsites.net|${{ secrets.BACKEND_URL }}|g' frontend/wwwroot/appsettings.json
+      - name: Inject backend URL and AzureAd config
+        run: |
+          sed -i 's|https://your-backend.azurewebsites.net|${{ secrets.BACKEND_URL }}|g' frontend/wwwroot/appsettings.json
+          sed -i 's|your-tenant-id|${{ secrets.AZURE_AD_TENANT_ID }}|g' frontend/wwwroot/appsettings.json
+          sed -i 's|your-client-id|${{ secrets.AZURE_AD_CLIENT_ID }}|g' frontend/wwwroot/appsettings.json
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
