@@ -114,12 +114,19 @@
     private async Task LoadDataAsync()
     {
         loading = true;
-        var collectionTask = Api.GetCollectionAsync(CollectionId);
-        var statsTask      = Api.GetStatsAsync(CollectionId);
-        await Task.WhenAll(collectionTask, statsTask);
-        collection = collectionTask.Result;
-        stats      = statsTask.Result;
-        loading    = false;
+        try
+        {
+            var collectionTask = Api.GetCollectionAsync(CollectionId);
+            var statsTask      = Api.GetStatsAsync(CollectionId);
+            await Task.WhenAll(collectionTask, statsTask);
+            collection = collectionTask.Result;
+            stats      = statsTask.Result;
+            loading    = false;
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            ex.Redirect();
+        }
     }
 
     private void StartReview() =>

@@ -118,16 +118,23 @@
         showBack = false;
         StateHasChanged();
 
-        card = await Api.GetNextCardAsync(CollectionId);
-        loading = false;
-
-        if (card is null)
+        try
         {
-            done = true;
-            return;
-        }
+            card = await Api.GetNextCardAsync(CollectionId);
+            loading = false;
 
-        StartTimer();
+            if (card is null)
+            {
+                done = true;
+                return;
+            }
+
+            StartTimer();
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            ex.Redirect();
+        }
     }
 
     private void StartTimer()

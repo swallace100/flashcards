@@ -1,7 +1,6 @@
 @page "/"
 @inject FlashcardApiService Api
 @inject NavigationManager Nav
-@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 
 <div class="home-page">
     <header class="app-header">
@@ -85,8 +84,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        collections = await Api.GetCollectionsAsync();
-        loading = false;
+        try
+        {
+            collections = await Api.GetCollectionsAsync();
+            loading = false;
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            ex.Redirect();
+        }
     }
 
     private void StartReview(int collectionId) =>
