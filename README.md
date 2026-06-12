@@ -75,6 +75,32 @@ Cards use the SM-2 algorithm. After revealing the answer, rate the card:
 
 A 45-second timer runs per card. If it expires before you rate the card, it automatically counts as Again.
 
+## Provisioning Azure resources
+
+All Azure resources are defined in [`infra/main.bicep`](infra/main.bicep). To provision from scratch:
+
+```powershell
+az group create --name Flashcards --location japaneast
+
+az deployment group create `
+  --resource-group Flashcards `
+  --template-file infra/main.bicep `
+  --parameters entraAdminLogin="you@example.com" entraAdminObjectId="<your-object-id>"
+```
+
+Your Entra ID object ID can be found in **Azure Portal → Microsoft Entra ID → Users → your user → Object ID**.
+
+After the first deploy, the outputs will include the Static Web App URL. Re-deploy with it to wire up CORS:
+
+```powershell
+az deployment group create `
+  --resource-group Flashcards `
+  --template-file infra/main.bicep `
+  --parameters entraAdminLogin="you@example.com" entraAdminObjectId="<your-object-id>" frontendOrigin="https://<your-swa-url>"
+```
+
+Then run the post-deployment steps (schema + Managed Identity grant) described in the Deploying to Azure section below.
+
 ## Deploying to Azure
 
 The live app runs entirely on Azure:
