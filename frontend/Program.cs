@@ -8,6 +8,8 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+builder.Logging.SetMinimumLevel(LogLevel.Warning);
+
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000";
 var clientId   = builder.Configuration["AzureAd:ClientId"] ?? "";
 
