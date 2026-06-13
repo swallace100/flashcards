@@ -24,10 +24,28 @@ Copy the example env file:
 Copy-Item backend/.env.example backend/.env
 ```
 
-`backend/.env` should contain:
+**3. Configure authentication**
+
+You need an Entra ID app registration (see [Setting up Entra ID](#setting-up-entra-id) below). Once you have one, add your IDs to `backend/.env`:
 
 ```
 ConnectionStrings__DefaultConnection=Server=(localdb)\mssqllocaldb;Database=flashcards;Trusted_Connection=true
+AzureAd__TenantId=<your-tenant-id>
+AzureAd__ClientId=<your-client-id>
+AzureAd__Audience=api://<your-client-id>
+```
+
+And add them to `frontend/wwwroot/appsettings.Development.json`:
+
+```json
+{
+  "ApiBaseUrl": "http://localhost:5288",
+  "AzureAd": {
+    "Authority": "https://login.microsoftonline.com/<your-tenant-id>",
+    "ClientId": "<your-client-id>",
+    "ValidateAuthority": true
+  }
+}
 ```
 
 ## Running the app
@@ -62,6 +80,32 @@ curl -X POST http://localhost:5288/collections/{id}/import -F "file=@path/to/you
 
 Replace `{id}` with the collection's numeric ID.
 
+## Setting up Entra ID
+
+The app requires an Azure AD app registration for user authentication. Create one before running locally or deploying.
+
+**1. Create the app registration**
+
+Azure Portal → Microsoft Entra ID → App registrations → New registration:
+- Name: anything (e.g. `flashcards`)
+- Supported account types: *Accounts in this organizational directory only*
+- Redirect URI: leave blank for now
+
+Note the **Application (client) ID** and **Directory (tenant) ID** from the overview page — you'll need these throughout.
+
+**2. Add redirect URIs**
+
+Authentication → Add a platform → Single-page application. Add:
+- `https://<your-swa-url>/authentication/login-callback` — production
+- `http://localhost:5029/authentication/login-callback` — local dev
+
+**3. Expose an API**
+
+Expose an API → Set (next to Application ID URI) → Save the default `api://<client-id>`. Then add a scope:
+- Scope name: `access_as_user`
+- Who can consent: Admins and users
+- State: Enabled
+
 ## Authentication
 
 The app uses **Microsoft Entra ID (Azure AD)** for user authentication. Only authenticated users can access the app or call the API.
@@ -70,19 +114,6 @@ The app uses **Microsoft Entra ID (Azure AD)** for user authentication. Only aut
 
 **Backend (ASP.NET Core):** Uses `Microsoft.Identity.Web` to validate incoming JWT Bearer tokens. A fallback authorization policy requires all endpoints to have an authenticated user, so no route is accidentally left open.
 
-**Configuration:** The frontend reads its Entra ID settings from `appsettings.json`. In production these values are injected at build time by GitHub Actions from repository secrets (see GitHub Actions secrets table below). The relevant secrets are:
-
-| Secret | Description |
-|--------|-------------|
-| `AZURE_AD_TENANT_ID` | Your Entra ID tenant ID. |
-| `AZURE_AD_CLIENT_ID` | The client ID of the app registration. |
-
-The backend reads its Entra ID settings from App Service Application Settings (`AzureAd:TenantId`, `AzureAd:ClientId`, `AzureAd:Audience`).
-
-**App registration (Azure Portal):** The app registration needs:
-- A redirect URI pointing to `https://<your-swa-url>/authentication/login-callback`
-- "Expose an API" with an `access_as_user` delegated scope defined (App ID URI: `api://<client-id>`)
-
 ## Spaced repetition
 
 Cards use the SM-2 algorithm. After revealing the answer, rate the card:
@@ -90,7 +121,7 @@ Cards use the SM-2 algorithm. After revealing the answer, rate the card:
 | Button | Meaning                                       |
 | ------ | --------------------------------------------- |
 | Easy   | Remembered without effort (longer interval)   |
-| Normal | Remembered normally (standard interval)       |
+| Good   | Remembered correctly (standard interval)      |
 | Hard   | Remembered with difficulty (shorter interval) |
 | Again  | Forgot (resets to day 1)                      |
 
@@ -128,7 +159,7 @@ The live app runs entirely on Azure:
 
 - **Frontend**: Blazor WASM hosted on Azure Static Web Apps, deployed automatically via GitHub Actions on push to `main`. The production API URL lives in `frontend/wwwroot/appsettings.json` (and `appsettings.Development.json` overrides it to `http://localhost:5288` for local dev).
 - **Backend**: ASP.NET Core hosted on Azure App Service (Linux, F1 free tier).
-- **Database**: Azure SQL (Serverless tier) with Entra ID-only authentication. No SQL passwords anywhere.
+- **Database**: Azure SQL (Basic DTU tier) with Entra ID-only authentication. No SQL passwords anywhere.
 
 Authentication between the backend and the database uses the App Service's system-assigned Managed Identity, granted access via:
 
@@ -146,11 +177,21 @@ Server=tcp:your-server.database.windows.net,1433;Initial Catalog=your-database;A
 
 No `.env` file is needed in production. App Service Application Settings take its place.
 
-**GitHub Actions secrets** — two secrets must be set in the repository (Settings → Secrets and variables → Actions):
+**GitHub Actions secrets** — set these in the repository (Settings → Secrets and variables → Actions):
 
 | Secret | Description |
 |--------|-------------|
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_*` | Auto-generated by Azure when linking the Static Web App to GitHub. |
-| `BACKEND_URL` | The full URL of your App Service backend (e.g. `https://your-backend.azurewebsites.net`). Injected into `appsettings.json` at build time so the real URL is never committed to the repo. |
+| `BACKEND_URL` | Full URL of your App Service (e.g. `https://your-backend.azurewebsites.net`). Injected into `appsettings.json` at build time. |
+| `AZURE_AD_TENANT_ID` | Directory (tenant) ID from the app registration. |
+| `AZURE_AD_CLIENT_ID` | Application (client) ID from the app registration. |
 
-Azure SQL Serverless auto-pauses after inactivity, so the first request after a break may take a few seconds to resume. For daily study use you'll never hit any limits. This setup costs pennies per month.
+**App Service Application Settings** — in addition to `ConnectionStrings__DefaultConnection`, add:
+
+| Setting | Value |
+|---------|-------|
+| `AzureAd__TenantId` | Directory (tenant) ID |
+| `AzureAd__ClientId` | Application (client) ID |
+| `AzureAd__Audience` | `api://<your-client-id>` |
+
+Azure SQL Basic DTU is always on, so there is no cold-start delay. This setup costs around $5/month.
