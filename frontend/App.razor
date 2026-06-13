@@ -3,6 +3,9 @@
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
         <Found Context="routeData">
+            @* NotAuthorized only fires for pages that declare [Authorize].
+               Pages without [Authorize] (like Authentication.razor) always render directly,
+               so this handler never intercepts the login callback and corrupts the returnUrl. *@
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
                     <RedirectToLogin />

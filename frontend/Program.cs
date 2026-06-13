@@ -13,6 +13,8 @@ builder.Logging.SetMinimumLevel(LogLevel.Warning);
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000";
 var clientId   = builder.Configuration["AzureAd:ClientId"] ?? "";
 
+// Scope defined under "Expose an API" in the Entra ID app registration.
+// The backend validates the JWT aud claim against this same App ID URI.
 var apiScope = $"api://{clientId}/access_as_user";
 
 builder.Services.AddMsalAuthentication(options =>
