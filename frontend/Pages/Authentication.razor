@@ -1,7 +1,7 @@
 @page "/authentication/{action}"
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Microsoft.AspNetCore.Authorization
-@* No [Authorize] here — pages without it are already accessible to everyone.
+@* No [Authorize] here. Pages without it are already accessible to everyone.
    [AllowAnonymous] is kept as an explicit marker of intent. *@
 @attribute [AllowAnonymous]
 
