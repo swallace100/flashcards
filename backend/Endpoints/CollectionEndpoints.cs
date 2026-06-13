@@ -74,6 +74,8 @@ public static class CollectionEndpoints
                 return Results.BadRequest("Upload an .xlsx file as multipart/form-data.");
 
             var file = request.Form.Files[0];
+            if (!file.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+                return Results.BadRequest("Only .xlsx files are supported.");
             using var stream = file.OpenReadStream();
             using var workbook = new XLWorkbook(stream);
             var sheet = workbook.Worksheet(1);
