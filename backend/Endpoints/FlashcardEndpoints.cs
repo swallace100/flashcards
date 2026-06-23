@@ -10,18 +10,19 @@ public static class FlashcardEndpoints
     public static void Map(WebApplication app)
     {
         // Next card for review: due cards first (ordered by due date), then new cards (ordered by id)
-        app.MapGet("/flashcards/next", async (int collectionId, FlashcardsDbContext db) =>
+        // collectionId omitted => study across all collections
+        app.MapGet("/flashcards/next", async (int? collectionId, FlashcardsDbContext db) =>
         {
             var now = DateTime.UtcNow;
 
             var card = await db.Flashcards
-                           .Where(flashcard => flashcard.CollectionId == collectionId
+                           .Where(flashcard => (collectionId == null || flashcard.CollectionId == collectionId)
                                     && flashcard.DueDate <= now
                                     && flashcard.Repetitions > 0)
                            .OrderBy(flashcard => flashcard.DueDate)
                            .FirstOrDefaultAsync()
                        ?? await db.Flashcards
-                           .Where(flashcard => flashcard.CollectionId == collectionId
+                           .Where(flashcard => (collectionId == null || flashcard.CollectionId == collectionId)
                                     && flashcard.Repetitions == 0
                                     && flashcard.DueDate <= now)
                            .OrderBy(flashcard => flashcard.Id)

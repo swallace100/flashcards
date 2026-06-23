@@ -19,6 +19,8 @@
     }
     else
     {
+        <button class="btn-study-all" @onclick="StudyAll">Study All Collections</button>
+
         <div class="collection-list">
             @foreach (var c in collections)
             {
@@ -98,6 +100,9 @@
 
     private void StartReview(int collectionId) =>
         Nav.NavigateTo($"/collection/{collectionId}");
+
+    private void StudyAll() =>
+        Nav.NavigateTo("/review/all");
 
     private void Logout() =>
         Nav.NavigateToLogout("authentication/logout");

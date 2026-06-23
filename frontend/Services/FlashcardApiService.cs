@@ -15,8 +15,10 @@ public class FlashcardApiService(HttpClient http)
     public Task<CollectionStats?> GetStatsAsync(int collectionId) =>
         http.GetFromJsonAsync<CollectionStats>($"collections/{collectionId}/stats");
 
-    public Task<Flashcard?> GetNextCardAsync(int collectionId) =>
-        http.GetFromJsonAsync<Flashcard?>($"flashcards/next?collectionId={collectionId}");
+    public Task<Flashcard?> GetNextCardAsync(int? collectionId) =>
+        http.GetFromJsonAsync<Flashcard?>(collectionId is null
+            ? "flashcards/next"
+            : $"flashcards/next?collectionId={collectionId}");
 
     public Task<HttpResponseMessage> ReviewCardAsync(int cardId, int difficultyId) =>
         http.PutAsJsonAsync($"flashcards/{cardId}", new { difficultyId });

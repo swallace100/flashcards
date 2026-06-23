@@ -60,6 +60,23 @@ html, body {
     gap: 12px;
 }
 
+.btn-study-all {
+    margin: 16px 16px 0;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(160deg, #1a1a2e 0%, #2a2a4a 100%);
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.btn-study-all:hover { filter: brightness(1.15); }
+.btn-study-all:active { transform: scale(0.98); }
+
 .collection-card {
     background: white;
     border: none;

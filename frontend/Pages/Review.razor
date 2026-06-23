@@ -1,3 +1,4 @@
+@page "/review/all"
 @page "/review/{CollectionId:int}"
 @attribute [Authorize]
 @inject FlashcardApiService Api
@@ -14,15 +15,15 @@
         <div class="done-state">
             <div class="done-icon">&#10003;</div>
             <h2>All caught up!</h2>
-            <p>No due or new cards remaining in this collection.</p>
-            <button class="btn-home" @onclick="GoHome">Back to Collection</button>
+            <p>No due or new cards remaining in @(CollectionId is null ? "any collection" : "this collection").</p>
+            <button class="btn-home" @onclick="GoHome">@(CollectionId is null ? "Back Home" : "Back to Collection")</button>
         </div>
     }
     else if (card is not null)
     {
         <div class="review-header">
             <button class="btn-back" @onclick="GoHome">&#8592;</button>
-            <span class="collection-label">Reviewing</span>
+            <span class="collection-label">@(CollectionId is null ? "Reviewing All Collections" : "Reviewing")</span>
         </div>
 
         <div class="timer-container">
@@ -54,11 +55,11 @@
         else
         {
             <div class="rating-buttons">
-                <button class="btn-normal" @onclick="() => SubmitReview(2)">Good</button>
+                <button class="btn-normal" disabled="@isSubmitting" @onclick="() => SubmitReview(2)">Good</button>
                 <div class="rating-secondary">
-                    <button class="btn-again" @onclick="() => SubmitReview(0)">Again</button>
-                    <button class="btn-hard" @onclick="() => SubmitReview(3)">Hard</button>
-                    <button class="btn-easy" @onclick="() => SubmitReview(1)">Easy</button>
+                    <button class="btn-again" disabled="@isSubmitting" @onclick="() => SubmitReview(0)">Again</button>
+                    <button class="btn-hard" disabled="@isSubmitting" @onclick="() => SubmitReview(3)">Hard</button>
+                    <button class="btn-easy" disabled="@isSubmitting" @onclick="() => SubmitReview(1)">Easy</button>
                 </div>
             </div>
         }
@@ -87,7 +88,7 @@
 }
 
 @code {
-    [Parameter] public int CollectionId { get; set; }
+    [Parameter] public int? CollectionId { get; set; }
 
     private Flashcard? card;
     private bool loading = true;
@@ -101,6 +102,7 @@
 
     private int secondsLeft = 45;
     private CancellationTokenSource? _cts;
+    private bool isSubmitting = false;
 
     // r=44 → C = 2π×44 ≈ 276.46
     private const double Circumference = 276.46;
@@ -178,10 +180,18 @@
 
     private async Task SubmitReview(int difficultyId)
     {
-        if (card is null) return;
+        if (card is null || isSubmitting) return;
+        isSubmitting = true;
         StopTimer();
-        await Api.ReviewCardAsync(card.Id, difficultyId);
-        await LoadNextCard();
+        try
+        {
+            await Api.ReviewCardAsync(card.Id, difficultyId);
+            await LoadNextCard();
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
     private void OpenEdit()
@@ -212,7 +222,8 @@
         StartTimer();
     }
 
-    private void GoHome() => Nav.NavigateTo($"/collection/{CollectionId}");
+    private void GoHome() =>
+        Nav.NavigateTo(CollectionId is null ? "/" : $"/collection/{CollectionId}");
 
     public void Dispose() => StopTimer();
 }
