@@ -80,8 +80,8 @@
             <label class="field-label">Notes</label>
             <textarea class="input-field" @bind="editNotes" rows="2"></textarea>
             <div class="modal-actions">
-                <button class="btn-cancel" @onclick="CloseEdit">Cancel</button>
-                <button class="btn-primary" @onclick="SaveEdit">Save</button>
+                <button class="btn-cancel" disabled="@isSubmitting" @onclick="CloseEdit">Cancel</button>
+                <button class="btn-primary" disabled="@isSubmitting" @onclick="SaveEdit">Save</button>
             </div>
         </div>
     </div>
@@ -142,6 +142,7 @@
 
     private void StartTimer()
     {
+        StopTimer();
         secondsLeft = 45;
         _cts = new CancellationTokenSource();
         _ = RunTimerAsync(_cts.Token);
@@ -212,14 +213,22 @@
 
     private async Task SaveEdit()
     {
-        if (card is null) return;
-        await Api.EditCardAsync(card.Id, editFront, editBack,
-            string.IsNullOrWhiteSpace(editNotes) ? null : editNotes);
-        card.Front = editFront;
-        card.Back = editBack;
-        card.Notes = editNotes;
-        editing = false;
-        StartTimer();
+        if (card is null || isSubmitting) return;
+        isSubmitting = true;
+        try
+        {
+            await Api.EditCardAsync(card.Id, editFront, editBack,
+                string.IsNullOrWhiteSpace(editNotes) ? null : editNotes);
+            card.Front = editFront;
+            card.Back = editBack;
+            card.Notes = editNotes;
+            editing = false;
+            StartTimer();
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
     private void GoHome() =>
