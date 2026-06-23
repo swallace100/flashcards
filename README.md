@@ -158,7 +158,7 @@ Then run the post-deployment steps (schema + Managed Identity grant) described i
 The live app runs entirely on Azure:
 
 - **Frontend**: Blazor WASM hosted on Azure Static Web Apps, deployed automatically via GitHub Actions on push to `main`. The production API URL lives in `frontend/wwwroot/appsettings.json` (and `appsettings.Development.json` overrides it to `http://localhost:5288` for local dev).
-- **Backend**: ASP.NET Core hosted on Azure App Service (Linux, F1 free tier).
+- **Backend**: ASP.NET Core hosted on Azure App Service (Linux, F1 free tier), deployed automatically via GitHub Actions on push to `main` (when files under `backend/` change).
 - **Database**: Azure SQL (Basic DTU tier) with Entra ID-only authentication. No SQL passwords anywhere.
 
 Authentication between the backend and the database uses the App Service's system-assigned Managed Identity, granted access via:
@@ -185,6 +185,7 @@ No `.env` file is needed in production. App Service Application Settings take it
 | `BACKEND_URL` | Full URL of your App Service (e.g. `https://your-backend.azurewebsites.net`). Injected into `appsettings.json` at build time. |
 | `AZURE_AD_TENANT_ID` | Directory (tenant) ID from the app registration. |
 | `AZURE_AD_CLIENT_ID` | Application (client) ID from the app registration. |
+| `AZURE_WEBAPP_PUBLISH_PROFILE` | Publish profile XML for the backend App Service (`az webapp deployment list-publishing-profiles --xml`). Used by the backend deploy workflow. |
 
 **App Service Application Settings** — in addition to `ConnectionStrings__DefaultConnection`, add:
 
