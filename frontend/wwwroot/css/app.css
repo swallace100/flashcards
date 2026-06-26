@@ -259,6 +259,7 @@ html, body {
 }
 
 .btn-start-review:active { opacity: 0.82; }
+.btn-start-review:disabled { background: #b0b8c8; cursor: default; }
 
 .action-label {
     font-size: 1.1rem;

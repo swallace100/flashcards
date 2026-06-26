@@ -10,15 +10,6 @@
     {
         <p class="loading">Loading...</p>
     }
-    else if (done)
-    {
-        <div class="done-state">
-            <div class="done-icon">&#10003;</div>
-            <h2>All caught up!</h2>
-            <p>No due or new cards remaining in @(CollectionId is null ? "any collection" : "this collection").</p>
-            <button class="btn-home" @onclick="GoHome">@(CollectionId is null ? "Back Home" : "Back to Collection")</button>
-        </div>
-    }
     else if (card is not null)
     {
         <div class="review-header">
@@ -92,7 +83,6 @@
 
     private Flashcard? card;
     private bool loading = true;
-    private bool done = false;
     private bool showBack = false;
     private bool editing = false;
 
@@ -128,7 +118,7 @@
 
             if (card is null)
             {
-                done = true;
+                GoHome();
                 return;
             }
 
